@@ -18,7 +18,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "hnf";
+    private static final String TAG = "MainActivity";
     private static final int MESSAGE_NEW_BOOK_ARRIVED = 1;
     private IBookManager mRemoteBookManager;
     private Intent intent;
@@ -48,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
                 List<Book> newlist = bookManager.getBookList();
                 Log.e(TAG,"query book list:"+newlist.toString());
                 bookManager.registerListener(mOnNewBookArrivedListener);
+                //方法一在这重启service
+                iBinder.linkToDeath(mDeathRecipient,0);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -56,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             mRemoteBookManager = null;
+            //方法二在这重启service
             Log.e(TAG,"binder died.");
         }
     };
@@ -75,6 +78,11 @@ public class MainActivity extends AppCompatActivity {
     private IOnNewBookArrivedListener mOnNewBookArrivedListener = new IOnNewBookArrivedListener.Stub() {
         @Override
         public void onNewBookArrived(Book newBook) throws RemoteException {
+            /**
+             * 1.Message msg = new Message();
+             2.Message msg2 = Message.obtain();通过obtainMessage能避免重复Message创建对象
+             3.Message msg1 = handler1.obtainMessage();通过obtainMessage能避免重复Message创建对象
+             */
             mHandler.obtainMessage(MESSAGE_NEW_BOOK_ARRIVED,newBook).sendToTarget();
         }
     };
